@@ -6,6 +6,10 @@ open Elmish.WPF
 
 module Types =
 
+    type MouseAction =
+        | Up
+        | Down
+
     type ClockMsg =
         | Tick of DateTime
 
@@ -17,6 +21,7 @@ module Types =
         | Increment
         | Decrement
         | SetStepSize of int
+        | MouseEvent of MouseAction
 
     type Model = 
         { Count: int
@@ -48,6 +53,8 @@ module State =
         | Decrement -> { model with Count = model.Count - model.StepSize }
         | SetStepSize n -> { model with StepSize = n }
         | ClockMsg m -> { model with Clock = clockUpdate m model.Clock }
+        | MouseEvent Up -> model
+        | MouseEvent Down -> model
         
 
 module App =
@@ -62,7 +69,8 @@ module App =
           "Decrement" |> Binding.cmdIf (fun _ m -> Decrement) (fun _ m -> m.StepSize = 1)
           "Count" |> Binding.oneWay (fun m -> m.Count)
           "StepSize" |> Binding.twoWay (fun m -> (double m.StepSize)) (fun v m -> v |> int |> SetStepSize)
-          "Clock" |> Binding.model (fun m -> m.Clock) clockViewBinding ClockMsg ]
+          "Clock" |> Binding.model (fun m -> m.Clock) clockViewBinding ClockMsg
+          "TestDown" |> Binding.cmd (fun _ m -> MouseEvent Down) ]
 
     [<EntryPoint;STAThread>]
     let main argv = 
