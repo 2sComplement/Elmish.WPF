@@ -22,6 +22,7 @@ module Types =
         | Decrement
         | SetStepSize of int
         | MouseEvent of MouseAction
+        | KeyboardEvent of string
 
     type Model = 
         { Count: int
@@ -31,6 +32,7 @@ module Types =
 
 module State =
     open Types
+    open System.Windows.Input
      
     let init() = { Count = 0; StepSize = 1; Clock = { Time = DateTime.Now }}
 
@@ -55,6 +57,7 @@ module State =
         | ClockMsg m -> { model with Clock = clockUpdate m model.Clock }
         | MouseEvent Up -> model
         | MouseEvent Down -> model
+        | KeyboardEvent key -> Console.WriteLine(key); model
         
 
 module App =
@@ -70,7 +73,8 @@ module App =
           "Count" |> Binding.oneWay (fun m -> m.Count)
           "StepSize" |> Binding.twoWay (fun m -> (double m.StepSize)) (fun v m -> v |> int |> SetStepSize)
           "Clock" |> Binding.model (fun m -> m.Clock) clockViewBinding ClockMsg
-          "TestDown" |> Binding.cmd (fun _ m -> MouseEvent Down) ]
+          "TestDown" |> Binding.cmd (fun _ m -> MouseEvent Down)
+          "Escape" |> Binding.cmd (fun _ m -> KeyboardEvent "esc") ]
 
     [<EntryPoint;STAThread>]
     let main argv = 

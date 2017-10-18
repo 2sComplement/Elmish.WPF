@@ -7,6 +7,9 @@
         xmlns:local="clr-namespace:Elmish.Views"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding Escape}" />
+    </Window.InputBindings>
     <Grid HorizontalAlignment="Center" x:Name="Grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
