@@ -26,23 +26,14 @@ type Command(execute: obj -> unit, canExecute: obj -> bool, autoRequery) as this
 
   // CommandManager only keeps a weak reference to the event handler, so a
   // strong handler must be maintained
-  //member private x._Handler with get () = handler and set v = handler <- v
+  member private x._Handler with get () = _handler and set v = _handler <- v
 
   member x.RaiseCanExecuteChanged () = _canExecuteChanged.Trigger(x,EventArgs.Empty)
-  //member x.RaiseCanExecuteChanged () = canExecuteChanged.Raise(x, EventArgs.Empty)
 
-  member x.Cleanup () =
-    printfn "!!!!!!!! Command Cleanup !!!!!!!!"
-
-    _execute <- None
-    _canExecute <- None
-
-    //CommandManager.RequerySuggested.RemoveHandler(handler)
-    //handler <- null
-
-  //override x.Finalize () =
-  //  //CommandManager.RequerySuggested.RemoveHandler(handler)
-  //  printfn "!!!!!!!! FINALIZER !!!!!!!!"
+  interface IDisposable with
+    member x.Dispose () =
+      _execute <- None
+      _canExecute <- None
 
   interface ICommand with
     [<CLIEvent>]

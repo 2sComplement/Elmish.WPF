@@ -81,13 +81,13 @@ and internal SubModelSelectedItemBinding<'model, 'msg, 'bindingModel, 'bindingMs
   Selected: Lazy<ViewModel<'bindingModel, 'bindingMsg> voption> ref
 }
 
-and internal Cleaner<'model, 'msg>() =
+and private BindingManager<'model, 'msg>() =
   
-  static member cleanup (vm:ViewModel<'model, 'msg>) =
+  static member disposeBindings (vm:ViewModel<'model, 'msg>) =
     vm.Bindings
     |> Seq.iter (
       function
-      | KeyValue(_, Cmd c) -> c.Cmd.Cleanup()
+      | KeyValue(_, Cmd c) -> (c.Cmd :> IDisposable).Dispose()
       | _ -> ())
 
 /// Represents all necessary data used in an active binding.
@@ -274,7 +274,7 @@ and [<AllowNullLiteral>] internal ViewModel<'model, 'msg>
         let execute _ = exec currentModel |> ValueOption.iter dispatch'
         let canExecute _ = canExec currentModel
         Some <| Cmd {
-          Cmd = Command(execute, canExecute, false)
+          Cmd = new Command(execute, canExecute, false)
           CanExec = canExec }
     | CmdParamData d ->
         let exec = measure2 name "exec" d.Exec
@@ -282,7 +282,7 @@ and [<AllowNullLiteral>] internal ViewModel<'model, 'msg>
         let dispatch' = d.WrapDispatch dispatch
         let execute param = exec param currentModel |> ValueOption.iter dispatch'
         let canExecute param = canExec param currentModel
-        Some <| CmdParam (Command(execute, canExecute, d.AutoRequery))
+        Some <| CmdParam (new Command(execute, canExecute, d.AutoRequery))
     | SubModelData d ->
         let getModel = measure name "getSubModel" d.GetModel
         let getBindings = measure name "bindings" d.GetBindings
@@ -600,7 +600,7 @@ and [<AllowNullLiteral>] internal ViewModel<'model, 'msg>
             // Remove old view models that no longer exist
             if b.Vms.Count <> 0 && newSubModels.Length = 0
             then
-              b.Vms |> Seq.iter (fun vm -> Cleaner.cleanup vm)
+              b.Vms |> Seq.iter (fun vm -> BindingManager.disposeBindings vm)
               b.Vms.Clear ()
             else
               for i in b.Vms.Count - 1..-1..0 do
@@ -608,7 +608,7 @@ and [<AllowNullLiteral>] internal ViewModel<'model, 'msg>
                 if oldId |> newSubModelIdxPairsById.ContainsKey |> not then
                   let (oldIdx, _) = oldSubViewModelIdxPairsById.[oldId]
                   log "[%s] Removing model at %O" propNameChain oldId
-                  b.Vms.[oldIdx] |> Cleaner.cleanup
+                  b.Vms.[oldIdx] |> BindingManager.disposeBindings
                   b.Vms.RemoveAt oldIdx
 
             // Add new models that don't currently exist
