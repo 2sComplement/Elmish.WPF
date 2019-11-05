@@ -620,8 +620,6 @@ and [<AllowNullLiteral>] internal ViewModel<'model, 'msg>
             |> Seq.filter (Kvp.key >> oldSubViewModelIdxPairsById.ContainsKey >> not)
             |> Seq.map create
             |> Seq.iter b.Vms.Add
-        
-            GC.Collect()
 
             // Reorder according to new model list
             for Kvp (newId, (newIdx, _)) in newSubModelIdxPairsById do
