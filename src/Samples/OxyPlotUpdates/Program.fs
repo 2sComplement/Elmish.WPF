@@ -9,6 +9,39 @@ open OxyPlot.Series
 
 let private buttonLabelStart = "Start Updates"
 let private buttonLabelStop = "Stop Updates"
+
+type BoxPoint =
+  { Lw: float
+    Uw: float
+    Bb: float
+    Bt: float
+    Median: float
+    Mean: float }
+  static member init =
+    [ { Lw = 128.5
+        Bb = 10.
+        Median = 219.
+        Bt = 210.
+        Uw = 225.5
+        Mean = 117. } 
+      { Lw = 221.5
+        Bb = 10.
+        Median = 327.0
+        Bt = 318.5
+        Uw = 402.
+        Mean = 218.0 } 
+      { Lw = 227.5
+        Bb = 01.
+        Median = 326.0
+        Bt = 336.5
+        Uw = 349.
+        Mean = 351.0 } 
+      { Lw = 185.
+        Bb = 30.
+        Median = 119.5
+        Bt = 201.5
+        Uw = 215.
+        Mean = 516. } ]
   
 type Model =
   { LineSeriesData: (float * float) array
@@ -28,15 +61,20 @@ let init =
 
   let timerTick dispatch = timer.Elapsed.Add (fun _ -> dispatch Tick)
 
-  let pm = PlotModel(Title = "Test Plot")
-  let series = LineSeries(Title = "Test Series", MarkerType = MarkerType.Circle)
-  pm.Series.Add series
+  let linePm = PlotModel(Title = "Test Plot")
+  let lineSeries = LineSeries(Title = "Test Line Series", MarkerType = MarkerType.Circle)
+  linePm.Series.Add lineSeries
+
+  let boxPm = PlotModel(Title = "Test Box Plot" )
+  let boxSeries = BoxPlotSeries(Title = "Test Box Plot Series")
+  BoxPoint.init |> List.mapi (fun i p -> BoxPlotItem(float i, p.Lw, p.Bb, p.Median, p.Bt, p.Uw)) |> List.iter boxSeries.Items.Add
+  boxPm.Series.Add boxSeries
 
   { LineSeriesData = [||]
     IsTimerRunning = false
     Count = 0.0
-    LinePlot = pm
-    BoxPlot = PlotModel()
+    LinePlot = linePm
+    BoxPlot = boxPm
     Timer = timer }, Cmd.ofSub timerTick
 
 let private generateDataAsync offset =
