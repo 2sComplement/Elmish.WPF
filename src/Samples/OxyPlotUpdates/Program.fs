@@ -11,19 +11,20 @@ let private buttonLabelStart = "Start Updates"
 let private buttonLabelStop = "Stop Updates"
   
 type Model =
-  { Data: (float * float) array
-    PlotViewModel: PlotModel
+  { LineSeriesData: (float * float) array
+    LinePlot: PlotModel
+    BoxPlot: PlotModel
     Timer: Timers.Timer
     IsTimerRunning: bool
     Count: float }
 
 type Msg =
-  | GotData of (float * float) array
+  | GotLineSeriesData of (float * float) array
   | ToggleTimer
   | Tick
 
 let init =
-  let timer = new Timers.Timer(100.)
+  let timer = new Timers.Timer(60.)
 
   let timerTick dispatch = timer.Elapsed.Add (fun _ -> dispatch Tick)
 
@@ -31,10 +32,11 @@ let init =
   let series = LineSeries(Title = "Test Series", MarkerType = MarkerType.Circle)
   pm.Series.Add series
 
-  { Data = [||]
+  { LineSeriesData = [||]
     IsTimerRunning = false
     Count = 0.0
-    PlotViewModel = pm
+    LinePlot = pm
+    BoxPlot = PlotModel()
     Timer = timer }, Cmd.ofSub timerTick
 
 let private generateDataAsync offset =
@@ -42,9 +44,9 @@ let private generateDataAsync offset =
   async {
 
     // Simulate some latency
-    do! Async.Sleep(rand.NextDouble() * 300.0 |> int)
+    do! Async.Sleep(rand.NextDouble() * 10.0 |> int)
 
-    return [| 0 .. 999 |] |> Array.map (float >> fun i -> i, sin (i + offset))
+    return [| 0 .. 99 |] |> Array.map (float >> fun i -> i, sin (i + offset))
   }
   
 let update msg m =
@@ -54,19 +56,20 @@ let update msg m =
     { m with IsTimerRunning = not m.IsTimerRunning }, Cmd.none
   | Tick ->
     { m with Count = m.Count + 1.0 },
-    Cmd.OfAsync.perform generateDataAsync m.Count GotData
-  | GotData data ->
+    Cmd.OfAsync.perform generateDataAsync m.Count GotLineSeriesData
+  | GotLineSeriesData data ->
     // Update the series and redraw the plot 
-    let s = m.PlotViewModel.Series.[0] :?> LineSeries
+    let s = m.LinePlot.Series.[0] :?> LineSeries
     s.Points.Clear()
     data |> Array.map (fun (x, y) -> DataPoint(x, y)) |> s.Points.AddRange
-    m.PlotViewModel.InvalidatePlot(true)
+    m.LinePlot.InvalidatePlot(true)
 
-    { m with Data = data }, Cmd.none
+    { m with LineSeriesData = data }, Cmd.none
 
 let bindings () : Binding<Model, Msg> list = [
 
-  "PlotViewModel" |> Binding.oneWay (fun m -> m.PlotViewModel)
+  "LinePlotModel" |> Binding.oneWay (fun m -> m.LinePlot)
+  "BoxPlotModel" |> Binding.oneWay (fun m -> m.BoxPlot)
 
   "ToggleStartStop" |> Binding.cmd (fun m -> ToggleTimer)
   "ToggleStartStopLabel" |> Binding.oneWay (fun m -> if m.IsTimerRunning then buttonLabelStop else buttonLabelStart)
